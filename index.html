@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Builder</title>
+  <style>
+    :root {
+      --bg-primary: #0b0f19; --bg-surface: #151f32; --bg-card: #1e293b;
+      --color-accent: #0284c7; --color-accent-hover: #0ea5e9;
+      --color-secondary: #f59e0b; --text-primary: #f8fafc;
+      --text-muted: #64748b; --border-color: #334155;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-primary); color: var(--text-primary);
+      margin: 0; padding: 40px 20px 120px 20px; display: flex; flex-direction: column; align-items: center;
+    }
+    header { text-align: center; margin-bottom: 40px; max-width: 640px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 24px; }
+    header h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.05em; margin: 0 0 12px 0; }
+    header p { color: var(--text-muted); font-size: 1.1rem; margin: 0; line-height: 1.5; }
+    .main-nav { display: flex; gap: 12px; margin-bottom: 24px; width: 100%; max-width: 640px; }
+    .tab-btn { flex: 1; padding: 14px; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600; cursor: pointer; }
+    .tab-btn.active { background-color: var(--color-accent); border-color: var(--color-accent); }
+    .sub-nav-container { width: 100%; max-width: 640px; display: flex; gap: 8px; margin-bottom: 32px; }
+    .sub-btn { padding: 6px 16px; background: transparent; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-muted); cursor: pointer; text-transform: uppercase; font-size: 0.85rem; }
+    .sub-btn.active { background-color: #1e293b; color: var(--color-secondary); border-color: var(--color-secondary); }
+    .display-zone { width: 100%; max-width: 640px; }
+    .exercise-card { background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; margin-bottom: 16px; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .card-title-area { display: flex; flex-direction: column; gap: 4px; }
+    .badge-row { display: flex; gap: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .diff-badge { color: #f59e0b; background-color: rgba(245, 158, 11, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .time-badge { color: #38bdf8; background-color: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .add-action-btn { background: transparent; color: var(--color-accent); border: 1px solid var(--color-accent); padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; }
+    .add-action-btn.added { background-color: #065f46; border-color: #059669; color: #a7f3d0; }
+    .form-instruction { background-color: rgba(15, 23, 42, 0.6); border-left: 3px solid var(--color-secondary); padding: 12px 16px; border-radius: 0 4px 4px 0; }
+    .form-instruction span { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700; }
+    .cart-trigger-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 640px; background-color: var(--color-accent); color: #ffffff; border: none; padding: 16px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; z-index: 10; }
+    .routine-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(11, 15, 25, 0.85); display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; z-index: 100; }
+    .routine-overlay.open { opacity: 1; pointer-events: auto; }
+    .routine-modal { background-color: var(--bg-surface); border: 1px solid var(--border-color); width: calc(100% - 40px); max-width: 580px; max-height: 80vh; border-radius: 12px; display: flex; flex-direction: column; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
+    .close-modal-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+    .modal-content-scroll { padding: 24px; overflow-y: auto; flex: 1; }
+    .summary-metrics { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; margin-bottom: 20px; display: flex; gap: 24px; }
+    .metric-box span { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 2px; }
+    .metric-box p { font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--text-primary); }
+    .selected-item { border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 16px; }
+    .selected-title-row { display: flex; justify-content: space-between; }
+    .remove-item-btn { background: transparent; border: none; color: #ef4444; cursor: pointer; }
+    .prescription-badge { display: inline-block; background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--color-secondary); color: var(--color-secondary); padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 700; margin-top: 4px; }
+    .suggested-headline { font-size: 1.1rem; color: var(--color-secondary); margin: 24px 0 12px 0; font-weight: 600; padding-top: 16px; border-top: 1px dashed var(--border-color); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Workout Builder</h1>
+    <p>Select a movement category and build your custom workout template.</p>
+  </header>
+  <nav class="main-nav">
+    <button class="tab-btn active" id="tab-warmups" onclick="switchMainGroup('warmups')">Warmups</button>
+    <button class="tab-btn" id="tab-pull" onclick="switchMainGroup('pull')">Pull</button>
+    <button class="tab-btn" id="tab-core" onclick="switchMainGroup('core')">Core</button>
+    <button class="tab-btn" id="tab-legs" onclick="switchMainGroup('legs')">Legs</button>
+    <button class="tab-btn" id="tab-suggested" onclick="switchMainGroup('suggested')">Suggested</button>
+  </nav>
+  <div class="sub-nav-container" id="sub-nav-bar"></div>
+  <main class="display-zone" id="workout-content"></main>
+  <button class="cart-trigger-bar" onclick="toggleRoutineModal(true)">
+    <span>View Selected Routine</span>
+    <span id="cart-counter">0 Exercises Selected</span>
+  </button>
+  <div class="routine-overlay" id="routine-modal-overlay">
+    <div class="routine-modal">
+      <div class="modal-header">
+        <h2>Your Custom Blueprint</h2>
+        <button class="close-modal-btn" onclick="toggleRoutineModal(false)">&times;</button>
+      </div>
+      <div class="modal-content-scroll" id="modal-routine-list"></div>
+    </div>
+  </div>
+<script>
+    const exerciseDatabase = {
+      warmups: {
+        all: [
+          { id: "w1", sets: 1, reps: 12, name: "Jumping Jacks", desc: "Full-body dynamic movement designed to raise core temperature.", tip: "Maintain a structured tempo while landing softly.", difficulty: "Beginner", points: 1, isTimeBased: true, durationRaw: 1 },
+          { id: "w2", sets: 1, reps: 15, name: "Jog in Place", desc: "Low-impact cardio to activate ankle and knee joint complexes.", tip: "Coordinate a natural arm swing rhythm.", difficulty: "Beginner", points: 1, isTimeBased: true, durationRaw: 1 },
+          { id: "w3", sets: 1, reps: 15, name: "Arm Circles", desc: "Rotational movement for shoulder lubricating patterns.", tip: "Keep extensions completely level with the floor plane.", difficulty: "Beginner", points: 1, isTimeBased: false },
+          { id: "w4", sets: 1, reps: 10, name: "Lunges", desc: "Dynamic lower-body linear flexibility extension path.", tip: "Keep your trunk vertical; avoid excessive knee forward movement.", difficulty: "Beginner", points: 1, isTimeBased: false },
+          { id: "w5", sets: 1, reps: 10, name: "Stretching", desc: "Targeted static patterns to ease tight core muscle groups.", tip: "Move into extension tension dynamically without bouncing.", difficulty: "Beginner", points: 1, isTimeBased: true, durationRaw: 2 }
+        ]
+      },
+      pull: {
+        back: [
+          { id: "pb1", sets: 3, reps: 12, name: "Superman", desc: "Prone execution to lock mid-back spine structural lines.", tip: "Elevate upper chest and knees smoothly via glute contraction.", difficulty: "Beginner", points: 1 },
+          { id: "pb2", sets: 4, reps: 10, name: "Door Row", desc: "Horizontal suspension pull variant utilizing residential frames.", tip: "Pull with elbows downward while holding standard framing edge.", difficulty: "Intermediate", points: 2 },
+          { id: "pb3", sets: 3, reps: 8, name: "Inverted Table Row", desc: "Suspension path execution directly underneath heavy home items.", tip: "Keep core rigid; drive chest directly up to table framing.", difficulty: "Advanced", points: 3 },
+          { id: "pb4", sets: 3, reps: 15, name: "Scapular Retraction", desc: "Isolation load focused on squeeze alignment between shoulder blades.", tip: "Keep arms extended straight; move purely by pulling blades in.", difficulty: "Intermediate", points: 2 }
+        ],
+        biceps: [
+          { id: "pbi1", sets: 3, reps: 12, name: "Towel Curls", desc: "Manual tension friction curves using a basic long cloth strap.", tip: "Use the leading foot downward to apply manual layout resistance.", difficulty: "Intermediate", points: 2 },
+          { id: "pbi2", sets: 3, reps: 10, name: "Chin-ups (Door Frame)", desc: "Vertical pull metrics using layout setups on stable framing structures.", tip: "Focus on pulling the vertical frame weight using arm-flex loops.", difficulty: "Advanced", points: 3 },
+          { id: "pbi3", sets: 3, reps: 10, name: "Table Inverted Rows (Underhand)", desc: "Supinated grip variation targeting deep interior arm fibers.", tip: "Squeeze arms fully at peak horizontal pull positioning.", difficulty: "Advanced", points: 3 },
+          { id: "pbi4", sets: 4, reps: 12, name: "Heavy Object Curls", desc: "Classic targeted arm bicep contraction using custom hand objects.", tip: "Tuck elbows flush into side walls to prevent swinging paths.", difficulty: "Beginner", points: 1 }
+        ]
+      },
+      core: {
+        all: [
+          { id: "c1", sets: 3, reps: 20, name: "Sit-ups", desc: "Abdominal layout track targeting flex strength patterns.", tip: "Squeeze through core muscles without manual cervical spine pulls.", difficulty: "Beginner", points: 1 },
+          { id: "c2", sets: 3, reps: 25, name: "Russian Twists", desc: "Transverse rotation path targeting spinal internal oblique layouts.", tip: "Maintain a locked lean; follow manual twist paths with eyes.", difficulty: "Intermediate", points: 2 },
+          { id: "c3", sets: 3, reps: 12, name: "Plank", desc: "Static structural core support building complete front brace power.", tip: "Build a straight vector line from heels up to head lines.", difficulty: "Intermediate", points: 2, isTimeBased: true, durationRaw: 3 },
+          { id: "c4", sets: 3, reps: 16, name: "Bicycle Crunch", desc: "Alternating knee and trunk alignment targeting front abs.", tip: "Slow pacing increases deep mechanical tension advantages.", difficulty: "Intermediate", points: 2 },
+          { id: "c5", sets: 3, reps: 12, name: "Leg Lifts", desc: "Vertical lever raises designed to develop deep hip flex contours.", tip: "Keep lower back flat against ground to prevent arch loops.", difficulty: "Advanced", points: 3 }
+        ]
+      },
+      legs: {
+        quads: [
+          { id: "lq1", sets: 3, reps: 8, name: "Bulgarian Split Squats", desc: "Unilateral vertical movement targeting maximum single leg loads.", tip: "Track lead knee safely down center lines of active foot structural.", difficulty: "Advanced", points: 3 },
+          { id: "lq2", sets: 3, reps: 12, name: "Wall Sits", desc: "Static extension load focusing mechanical strain onto quads.", tip: "Lock back to walls; form standard 90-degree bend profiles.", difficulty: "Beginner", points: 1, isTimeBased: true, durationRaw: 3 },
+          { id: "lq3", sets: 4, reps: 15, name: "Squats", desc: "Classic lower body foundation targeting uniform quad output.", tip: "Drop hips level while spreading weight layout through feet.", difficulty: "Beginner", points: 1 },
+          { id: "lq4", sets: 3, reps: 12, name: "Walking Lunges", desc: "Linear foot steps designed to build structural hip tracking lines.", tip: "Step deliberately; keep trunk balanced over layout tracks.", difficulty: "Intermediate", points: 2 }
+        ],
+        calves: [
+          { id: "lc1", sets: 4, reps: 15, name: "Single-Leg Calf Raises", desc: "Unilateral foot tracking meant to isolate lower leg ankles.", tip: "Pause at peak to enforce complete flex extension values.", difficulty: "Intermediate", points: 2 },
+          { id: "lc2", sets: 3, reps: 15, name: "Pogo Hops", desc: "Reactive low bounds utilizing tendon recoil layouts.", tip: "Minimize knee bend loops; jump cleanly through ankles.", difficulty: "Intermediate", points: 2, isTimeBased: true, durationRaw: 2 },
+          { id: "lc3", sets: 3, reps: 15, name: "Jumping Jacks", desc: "High count lower body pump targeting muscular pacing.", tip: "Land softly on your midfoot region during patterns.", difficulty: "Beginner", points: 1 },
+          { id: "lc4", sets: 3, reps: 10, name: "Jump Squat", desc: "Explosive movement sequence to generate high lower leg power.", tip: "Absorb landing forces smoothly directly back into next downward squat.", difficulty: "Advanced", points: 3 }
+        ]
+      }
+    };
+    let userRoutineCart = [];
+    let currentMain = 'warmups';
+    let currentSub = 'all';
+
+    function getDuration(ex) {
+      if (ex.isTimeBased && ex.durationRaw) {
+        return ex.durationRaw; 
+      }
+      let totalSeconds = (ex.sets * ex.reps * 4) + ((ex.sets - 1) * 60);
+      return Math.max(1, Math.round(totalSeconds / 60));
+    }
+
+    function switchMainGroup(groupKey) {
+      currentMain = groupKey;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${groupKey}`).classList.add('active');
+      const subNavBar = document.getElementById('sub-nav-bar');
+      subNavBar.innerHTML = '';
+
+      if (groupKey === 'suggested') {
+        currentSub = 'all'; renderSuggestedTab(); return;
+      }
+      const subCategories = Object.keys(exerciseDatabase[groupKey]);
+      if (subCategories.length === 1 && subCategories[0] === 'all') {
+        currentSub = 'all'; renderExercises(groupKey, 'all');
+      } else {
+        subCategories.forEach((sub, index) => {
+          const btn = document.createElement('button');
+          btn.className = `sub-btn ${index === 0 ? 'active' : ''}`;
+          btn.textContent = sub;
+          btn.onclick = () => {
+            document.querySelectorAll('.sub-btn').forEach(s => s.classList.remove('active'));
+            btn.classList.add('active'); currentSub = sub; renderExercises(groupKey, sub);
+          };
+          subNavBar.appendChild(btn);
+        });
+        currentSub = subCategories[0]; renderExercises(groupKey, subCategories[0]);
+      }
+    }
+
+    function renderExercises(main, sub) {
+      const displayZone = document.getElementById('workout-content');
+      displayZone.innerHTML = '';
+      exerciseDatabase[main][sub].forEach(ex => {
+        const isAlreadyAdded = userRoutineCart.some(item => item.id === ex.id);
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-title-area">
+              <h3>${ex.name}</h3>
+              <div class="badge-row"><span class="diff-badge">${ex.difficulty}</span><span class="time-badge">${getDuration(ex)} min (${ex.sets}x${ex.reps})</span></div>
+            </div>
+            <button class="add-action-btn ${isAlreadyAdded ? 'added' : ''}" onclick="handleCartToggle('${ex.id}', this)">
+              ${isAlreadyAdded ? 'Added' : 'Add to Routine'}
+            </button>
+          </div>
+          <div class="exercise-meta"> <p>${ex.desc}</p>
+            <div class="form-instruction"> <span>Execution Note</span> <p>${ex.tip}</p> </div>
+          </div>
+        `;
+        displayZone.appendChild(card);
+      });
+    }
+
+    function getTopSuggestions() {
+      let unselected = [];
+      let activeCategories = new Set(userRoutineCart.map(item => item.id.substring(0, 2)));
+      for (let category in exerciseDatabase) {
+        for (let subcat in exerciseDatabase[category]) {
+          exerciseDatabase[category][subcat].forEach(ex => {
+            if (!userRoutineCart.some(item => item.id === ex.id)) unselected.push(ex);
+          });
+        }
+      }
+      unselected.sort((a, b) => {
+        let catA = a.id.substring(0, 2); let catB = b.id.substring(0, 2);
+        let missingA = !activeCategories.has(catA) ? 1 : 0;
+        let missingB = !activeCategories.has(catB) ? 1 : 0;
+        if (missingA !== missingB) return missingB - missingA; 
+        return a.id.localeCompare(b.id) * (userRoutineCart.length % 2 === 0 ? 1 : -1);
+      });
+      return unselected.slice(0, 3);
+    }
+
+    function renderSuggestedTab() {
+      const displayZone = document.getElementById('workout-content');
+      displayZone.innerHTML = '';
+      const suggestions = getTopSuggestions();
+      
+      if(userRoutineCart.length > 0 && suggestions.length > 0) {
+        const headline = document.createElement('h2');
+        headline.style = "font-size:1.3rem; margin-bottom:20px; color:var(--color-secondary);";
+        headline.textContent = "Based on your selections, we recommend adding:";
+        displayZone.appendChild(headline);
+      } else if (suggestions.length === 0) {
+        displayZone.innerHTML = `<p style="color:#64748b; text-align:center; padding:40px 0;">All items have been added.</p>`;
+        return;
+      }
+      suggestions.forEach(ex => {
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-title-area">
+              <h3>${ex.name}</h3>
+              <div class="badge-row"><span class="diff-badge">${ex.difficulty}</span><span class="time-badge">${getDuration(ex)} min (${ex.sets}x${ex.reps})</span></div>
+            </div>
+            <button class="add-action-btn" onclick="handleCartToggle('${ex.id}', this); renderSuggestedTab();">Add to Routine</button>
+          </div>
+          <div class="exercise-meta"> <p>${ex.desc}</p>
+            <div class="form-instruction"> <span>Execution Note</span> <p>${ex.tip}</p> </div>
+          </div>
+        `;
+        displayZone.appendChild(card);
+      });
+    }
+
+    function calculateRoutineMetrics() {
+      let totalMinutes = 0, totalDifficultyPoints = 0;
+      userRoutineCart.forEach(item => { 
+        totalMinutes += getDuration(item); 
+        totalDifficultyPoints += item.points; 
+      });
+      let averageDifficulty = "N/A";
+      if (userRoutineCart.length > 0) {
+        let avgPoints = totalDifficultyPoints / userRoutineCart.length;
+        if (avgPoints <= 1.5) averageDifficulty = "Beginner";
+        else if (avgPoints <= 2.5) averageDifficulty = "Intermediate";
+        else averageDifficulty = "Advanced";
+      }
+      return { duration: totalMinutes, difficulty: averageDifficulty };
+    }
+
+    function handleCartToggle(exerciseId, element) {
+      let foundExercise = null;
+      for (let category in exerciseDatabase) {
+        for (let subcat in exerciseDatabase[category]) {
+          let target = exerciseDatabase[category][subcat].find(item => item.id === exerciseId);
+          if (target) { foundExercise = target; break; }
+        }
+        if (foundExercise) break;
+      }
+      const existingIndex = userRoutineCart.findIndex(item => item.id === exerciseId);
+      if (existingIndex > -1) {
+        userRoutineCart.splice(existingIndex, 1);
+        if (element) { element.textContent = "Add to Routine"; element.classList.remove('added'); }
+      } else {
+        userRoutineCart.push(foundExercise);
+        if (element) { element.textContent = "Added"; element.classList.add('added'); }
+      }
+      updateCartUI();
+      if (currentMain === 'suggested') renderSuggestedTab();
+      else renderExercises(currentMain, currentSub);
+    }
+
+    function updateCartUI() {
+      const totalCount = userRoutineCart.length;
+      document.getElementById('cart-counter').textContent = `${totalCount} Exercise${totalCount === 1 ? '' : 's'} Selected`;
+      const modalListZone = document.getElementById('modal-routine-list');
+      modalListZone.innerHTML = '';
+      if (totalCount === 0) {
+        modalListZone.innerHTML = `<p style="color:#64748b; text-align:center; padding:40px 0;">No exercises chosen yet.</p>`;
+        return;
+      }
+      const metrics = calculateRoutineMetrics();
+      const summaryPanel = document.createElement('div');
+      summaryPanel.className = 'summary-metrics';
+      summaryPanel.innerHTML = `
+        <div class="metric-box"><span>Projected Time</span><p>${metrics.duration} Mins</p></div>
+        <div class="metric-box"><span>Overall Difficulty</span><p>${metrics.difficulty}</p></div>
+      `;
+      modalListZone.appendChild(summaryPanel);
+      userRoutineCart.forEach(ex => {
+        const row = document.createElement('div');
+        row.className = 'selected-item';
+        row.innerHTML = `
+          <div class="selected-title-row"><h4>${ex.name}</h4><button class="remove-item-btn" onclick="removeDirectFromCart('${ex.id}')">Remove</button></div>
+          <div class="prescription-badge">Suggested Volume: ${ex.sets} Sets x ${ex.reps} Reps</div>
+        `;
+        modalListZone.appendChild(row);
+      });
+      const nextSuggestions = getTopSuggestions();
+      if (nextSuggestions.length > 0) {
+        const nextTitle = document.createElement('h3');
+        nextTitle.className = 'suggested-headline'; nextTitle.textContent = "Recommended Additions";
+        modalListZone.appendChild(nextTitle);
+        nextSuggestions.forEach(ex => {
+          const item = document.createElement('div');
+          item.style = "display:flex; justify-content:space-between; align-items:center; padding:8px 0;";
+          item.innerHTML = `
+            <div><span style="font-size:0.95rem; font-weight:500; display:block;">${ex.name}</span>
+            <span style="font-size:0.75rem; color:var(--text-muted);">${ex.difficulty} · ${getDuration(ex)} min</span></div>
+            <button class="add-action-btn" style="padding:4px 8px; font-size:0.8rem;" onclick="handleCartToggle('${ex.id}', null)">+ Add</button>
+          `;
+          modalListZone.appendChild(item);
+        });
+      }
+    }
+
+    function removeDirectFromCart(exerciseId) {
+      userRoutineCart = userRoutineCart.filter(item => item.id !== exerciseId);
+      updateCartUI(); 
+      if (currentMain === 'suggested') renderSuggestedTab();
+      else renderExercises(currentMain, currentSub);
+    }
+
+    function toggleRoutineModal(show) {
+      const overlay = document.getElementById('routine-modal-overlay');
+      if (show) { updateCartUI(); overlay.classList.add('open'); } 
+      else { overlay.classList.remove('open'); }
+    }
+    window.onload = () => { switchMainGroup('warmups'); };
+  </script>
+</body>
+</html>
